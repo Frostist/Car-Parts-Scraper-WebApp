@@ -208,7 +208,8 @@ def get_price_stats(
 @app.get("/brand-stats", response_model=List[schemas.BrandStats])
 def get_brand_stats(db: Session = Depends(get_db)):
     try:
-        query = db.query(
+        # First get the basic stats
+        stats_query = db.query(
             models.CarBrand.name.label('brand_name'),
             func.round(func.avg(models.Part.price), 2).label('average_price'),
             func.count(models.Part.id).label('total_parts')
@@ -220,13 +221,31 @@ def get_brand_stats(db: Session = Depends(get_db)):
             func.avg(models.Part.price).desc()
         )
 
-        results = query.all()
-        return [schemas.BrandStats(
-            brand_name=row.brand_name,
-            average_price=float(row.average_price),
-            total_parts=row.total_parts
-        ) for row in results]
+        results = stats_query.all()
+        
+        # Then get price distributions separately
+        final_results = []
+        for row in results:
+            # Get all prices for this brand
+            prices = db.query(models.Part.price).join(
+                models.CarBrand,
+                models.Part.brand_id == models.CarBrand.id
+            ).filter(
+                models.CarBrand.name == row.brand_name
+            ).all()
+            
+            price_list = [p[0] for p in prices]  # Extract prices from result tuples
+            
+            final_results.append(schemas.BrandStats(
+                brand_name=row.brand_name,
+                average_price=float(row.average_price),
+                total_parts=row.total_parts,
+                price_distribution=price_list
+            ))
+        
+        return final_results
     except Exception as e:
+        logger.error(f"Error in brand-stats endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Initialize some sample data

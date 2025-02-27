@@ -75,6 +75,7 @@ class BrandStats(BaseModel):
     brand_name: str
     average_price: float
     total_parts: int
+    price_distribution: List[float]
     
     class Config:
         from_attributes = True 

@@ -53,6 +53,7 @@ const PriceDisplay = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [sortOrder, setSortOrder] = useState('asc');
+  const [viewMode, setViewMode] = useState('avg');
   const [detailedParts, setDetailedParts] = useState([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [newBrandName, setNewBrandName] = useState('');
@@ -311,6 +312,26 @@ const PriceDisplay = () => {
 
       {tabValue === 0 ? (
         <>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Button
+              variant={viewMode === 'avg' ? 'contained' : 'outlined'}
+              onClick={() => setViewMode('avg')}
+            >
+              Show Average Values
+            </Button>
+            <Button
+              variant={viewMode === 'min' ? 'contained' : 'outlined'}
+              onClick={() => setViewMode('min')}
+            >
+              Show Min Values
+            </Button>
+            <Button
+              variant={viewMode === 'max' ? 'contained' : 'outlined'}
+              onClick={() => setViewMode('max')}
+            >
+              Show Max Values
+            </Button>
+          </Box>
           <Box sx={{ width: '100%', height: 400, mb: 4 }}>
             <ResponsiveContainer>
               <BarChart data={priceData}>
@@ -332,7 +353,13 @@ const PriceDisplay = () => {
                     </g>
                   )}
                 />
-                <YAxis label={{ value: 'Average Price (ZAR)', angle: -90, position: 'insideLeft' }} />
+                <YAxis 
+                  label={{ 
+                    value: `${viewMode === 'avg' ? 'Average' : viewMode === 'min' ? 'Minimum' : 'Maximum'} Price (ZAR)`, 
+                    angle: -90, 
+                    position: 'insideLeft' 
+                  }} 
+                />
                 <RechartsTooltip 
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -355,7 +382,9 @@ const PriceDisplay = () => {
                     return null;
                   }}
                 />
-                <Bar dataKey="avg_price">
+                <Bar 
+                  dataKey={viewMode === 'avg' ? 'avg_price' : viewMode === 'min' ? 'min_price' : 'max_price'}
+                >
                   {priceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getBrandColor(entry.brand)} />
                   ))}
