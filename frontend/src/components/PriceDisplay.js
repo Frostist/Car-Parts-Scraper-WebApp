@@ -61,16 +61,26 @@ const PriceDisplay = () => {
 
   // Add color scale for brands
   const brandColors = [
-    '#1976d2', // Blue
-    '#2e7d32', // Green
-    '#d32f2f', // Red
-    '#ed6c02', // Orange
-    '#9c27b0', // Purple
-    '#0288d1', // Light Blue
-    '#689f38', // Light Green
-    '#f44336', // Light Red
-    '#ff9800', // Light Orange
-    '#673ab7', // Deep Purple
+    '#e41a1c', // Red
+    '#377eb8', // Blue
+    '#4daf4a', // Green
+    '#984ea3', // Purple
+    '#ff7f00', // Orange
+    '#ffff33', // Yellow
+    '#a65628', // Brown
+    '#f781bf', // Pink
+    '#00ffff', // Cyan
+    '#808080', // Gray
+    '#8dd3c7', // Mint
+    '#bebada', // Periwinkle
+    '#fb8072', // Salmon
+    '#80b1d3', // Light Blue
+    '#fdb462', // Light Orange
+    '#b3de69', // Light Green
+    '#fccde5', // Light Pink
+    '#bc80bd', // Light Purple
+    '#ccebc5', // Pale Green
+    '#ffed6f', // Light Yellow
   ];
 
   const getBrandColor = (brand) => {

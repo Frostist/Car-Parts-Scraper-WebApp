@@ -16,6 +16,7 @@ class CarBrand(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+    last_scraped = Column(DateTime, nullable=True)
     parts = relationship("Part", back_populates="brand", cascade="all, delete-orphan")
 
 class PartCategory(Base):

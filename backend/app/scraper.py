@@ -5,10 +5,11 @@ import json
 from pathlib import Path
 import logging
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from . import models, schemas
 import re
+from .database import SessionLocal
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -165,11 +166,18 @@ class AutoPartsScraper:
         
         try:
             brands = self.session.query(models.CarBrand).all()
+            current_time = datetime.utcnow()
+            six_hours = timedelta(hours=6)
             
             for brand in brands:
                 if self.should_stop:
                     logger.info("Stopping price updates as requested")
                     break
+                
+                # Skip if brand was scraped less than 6 hours ago
+                if brand.last_scraped and (current_time - brand.last_scraped) < six_hours:
+                    logger.info(f"Skipping {brand.name} - last scraped at {brand.last_scraped}")
+                    continue
                     
                 for part_name in self.COMMON_PARTS:
                     if self.should_stop:
@@ -221,7 +229,7 @@ class AutoPartsScraper:
                             old_price = existing_part.price
                             existing_part.price = result['price']
                             existing_part.last_updated = datetime.utcnow()
-                            logger.info(f"Updated price for {result['name']} from {old_price} to {result['price']}")
+                           # logger.info(f"Updated price for {result['name']} from {old_price} to {result['price']}")
                         else:
                             part = models.Part(
                                 name=result['name'],
@@ -236,6 +244,10 @@ class AutoPartsScraper:
                     
                     self.session.commit()
                     await asyncio.sleep(2)  # Delay between searches
+                
+                # Update the last_scraped timestamp for the brand
+                brand.last_scraped = current_time
+                self.session.commit()
                     
         finally:
             await self.close_http_session()
@@ -264,10 +276,13 @@ async def start_price_updates(db: Session):
     
     return scraper
 
-async def scrape_parts_prices():
+async def scrape_parts_prices(session: Session):
     """
     Scrapes car parts prices from various South African auto parts websites.
     Currently using a simplified approach with sample data.
+    
+    Args:
+        session: SQLAlchemy database session
     """
     # In a real implementation, we would scrape from actual websites
     # For now, we'll use sample data
@@ -294,9 +309,17 @@ async def update_prices():
     """
     while True:
         logger.info("Updating car parts prices...")
-        await scrape_parts_prices()
+        db = SessionLocal()
+        try:
+            await scrape_parts_prices(db)
+        finally:
+            db.close()
         # Wait for 6 hours before the next update
         await asyncio.sleep(6 * 60 * 60)
 
 if __name__ == "__main__":
-    asyncio.run(scrape_parts_prices()) 
+    db = SessionLocal()
+    try:
+        asyncio.run(scrape_parts_prices(db))
+    finally:
+        db.close() 
