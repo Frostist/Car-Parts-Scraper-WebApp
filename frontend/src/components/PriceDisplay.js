@@ -38,7 +38,8 @@ import {
   YAxis, 
   Tooltip as RechartsTooltip, 
   ResponsiveContainer,
-  CartesianGrid 
+  CartesianGrid,
+  Cell 
 } from 'recharts';
 import { OpenInNew, Sort, Delete } from '@mui/icons-material';
 import axios from 'axios';
@@ -57,6 +58,25 @@ const PriceDisplay = () => {
   const [newBrandName, setNewBrandName] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [isScraperRunning, setIsScraperRunning] = useState(true);
+
+  // Add color scale for brands
+  const brandColors = [
+    '#1976d2', // Blue
+    '#2e7d32', // Green
+    '#d32f2f', // Red
+    '#ed6c02', // Orange
+    '#9c27b0', // Purple
+    '#0288d1', // Light Blue
+    '#689f38', // Light Green
+    '#f44336', // Light Red
+    '#ff9800', // Light Orange
+    '#673ab7', // Deep Purple
+  ];
+
+  const getBrandColor = (brand) => {
+    const index = brands.findIndex(b => b.name === brand);
+    return brandColors[index % brandColors.length];
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -131,7 +151,7 @@ const PriceDisplay = () => {
 
   const handleAddBrand = async () => {
     try {
-      const response = await axios.post('http://localhost:8000/brands', {
+      await axios.post('http://localhost:8000/brands', {
         name: newBrandName
       });
       
@@ -285,7 +305,23 @@ const PriceDisplay = () => {
             <ResponsiveContainer>
               <BarChart data={priceData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="brand" />
+                <XAxis 
+                  dataKey="brand" 
+                  height={40}
+                  tick={({ x, y, payload }) => (
+                    <g transform={`translate(${x},${y})`}>
+                      <text
+                        x={0}
+                        y={0}
+                        dy={16}
+                        textAnchor="middle"
+                        fill="#666"
+                      >
+                        {payload.value}
+                      </text>
+                    </g>
+                  )}
+                />
                 <YAxis label={{ value: 'Average Price (ZAR)', angle: -90, position: 'insideLeft' }} />
                 <RechartsTooltip 
                   content={({ active, payload }) => {
@@ -295,6 +331,9 @@ const PriceDisplay = () => {
                         <Card>
                           <CardContent>
                             <Typography variant="subtitle2">{data.brand}</Typography>
+                            <Typography variant="body2" color="textSecondary" gutterBottom>
+                              {data.category}
+                            </Typography>
                             <Typography>Average: R {data.avg_price.toFixed(2)}</Typography>
                             <Typography>Min: R {data.min_price.toFixed(2)}</Typography>
                             <Typography>Max: R {data.max_price.toFixed(2)}</Typography>
@@ -306,7 +345,11 @@ const PriceDisplay = () => {
                     return null;
                   }}
                 />
-                <Bar dataKey="avg_price" fill="#1976d2" />
+                <Bar dataKey="avg_price">
+                  {priceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getBrandColor(entry.brand)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Box>
